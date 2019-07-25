@@ -4,7 +4,7 @@ EvoGrad is a lightweight tool for differentiating through expectation,
 built on top of PyTorch.
 
 Tools that enable fast and flexible experimentation democratize and accelerate machine learning research.
-However, one field that so far has not been greatly impacted by automatic differentiation tools is evolutionary computation
+However, one field that so far has not been greatly impacted by automatic differentiation tools is evolutionary computation.
 The reason is that most evolutionary algorithms are gradient-free:
 they do not follow any explicit mathematical gradient (i.e., the mathematically optimal local direction of improvement), and instead proceed through a generate-and-test heuristic.
 In other words, they create new variants, test them out, and keep the best.
