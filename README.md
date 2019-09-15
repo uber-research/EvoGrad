@@ -115,12 +115,7 @@ Full code for these examples can be found in the `demos` directory of
 this repository.
 
 ## Installation
-First, install EvoGrad's dependencies:
-```
-pip install -r requirements.txt
-```
-
-Then, either install EvoGrad from pip:
+Either install EvoGrad from pip:
 ```
 pip install evograd
 ```
@@ -128,5 +123,6 @@ Or from the source code in this repository:
 ```
 git clone github.com/uber-research/EvoGrad
 cd EvoGrad
+pip install -r requirements.txt
 pip install -e .
 ```
