@@ -126,3 +126,8 @@ cd EvoGrad
 pip install -r requirements.txt
 pip install -e .
 ```
+
+
+## About
+
+Development of EvoGrad was led by [Alex Gajewski](https://github.com/agajews) as a Summer intern at Uber AI Labs.
