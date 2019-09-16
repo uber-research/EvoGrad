@@ -1,23 +1,17 @@
-#Copyright (c) 2019 Uber Technologies, Inc.
+# Copyright (c) 2019 Uber Technologies, Inc.
 #
-#Licensed under the Uber Non-Commercial License (the "License");
-#you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at the root directory of this project. 
+# Licensed under the Uber Non-Commercial License (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at the root directory of this project.
 #
-#See the License for the specific language governing permissions and
-#limitations under the License.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 import numpy as np
 import torch
 
 from .noise import noise
-
-
-def flatten(x):
-    if len(x.shape) == 0:
-        return x.reshape([1])
-    return x.flatten()
 
 
 class NormalProbRatio(torch.autograd.Function):
@@ -34,7 +28,8 @@ class NormalProbRatio(torch.autograd.Function):
     @staticmethod
     def backward(ctx, grad_output):
         mu, = ctx.saved_tensors
-        grad = (flatten(ctx.decode_fn(ctx.descriptors)) - mu) / ctx.sigma ** 2 * grad_output
+        theta = ctx.decode_fn(ctx.descriptors)
+        grad = (theta - mu) / ctx.sigma ** 2 * grad_output.unsqueeze(1)
         return (grad, None, None, None)
 
 
@@ -91,12 +86,11 @@ class Normal(Distribution):
         sigma: torch.tensor or float
         """
         super().__init__(mu.device, random_state)
-        self.mu_shape = mu.shape
-        self.mu = flatten(mu)
+        self.mu = mu
         self.sigma = sigma
 
-    def ratio(self, descriptor):
-        return NormalProbRatio.apply(self.mu, self.sigma, descriptor, self.decode)
+    def ratio(self, descriptors):
+        return NormalProbRatio.apply(self.mu, self.sigma, descriptors, self.decode)
 
     def sample(self, n, encode=False):
         n_epsilons = n
@@ -120,7 +114,7 @@ class Normal(Distribution):
         noise_idx, direction = descriptor
         epsilon = torch.tensor(noise.get(noise_idx, len(self.mu)), device=self.device)
         with torch.no_grad():
-            return (self.mu + direction * self.sigma * epsilon).reshape(self.mu_shape)
+            return self.mu + direction * self.sigma * epsilon
 
 
 class PairedNormal(Normal):
@@ -150,8 +144,7 @@ class MixNormal(Distribution):
         sigma: torch.tensor or float
         """
         super().__init__(mus[0].device, random_state)
-        self.mu_shape = mus[0].shape
-        self.mus = [flatten(mu) for mu in mus]
+        self.mus = [mu for mu in mus]
         self.sigma = sigma
 
     def ratio(self, descriptor):
@@ -167,7 +160,9 @@ class MixNormal(Distribution):
             dtype="int",
         )
         mu_ids = np.random.randint(len(self.mus), size=n)
-        descriptors = [(noise_id, mu_id, 1) for noise_id, mu_id in zip(noise_ids, mu_ids)]
+        descriptors = [
+            (noise_id, mu_id, 1) for noise_id, mu_id in zip(noise_ids, mu_ids)
+        ]
         if encode:
             return descriptors
         thetas = torch.stack([self.decode(descriptor) for descriptor in descriptors])
@@ -178,7 +173,8 @@ class MixNormal(Distribution):
             # assert isinstance(descriptor, torch.tensor)
             return descriptor
         noise_id, mu_id, direction = descriptor
-        epsilon = torch.tensor(noise.get(noise_id, len(self.mus[0])), device=self.device)
+        epsilon = torch.tensor(
+            noise.get(noise_id, len(self.mus[0])), device=self.device
+        )
         with torch.no_grad():
-            return (self.mus[mu_id] + direction * self.sigma * epsilon).reshape(self.mu_shape)
-
+            return self.mus[mu_id] + direction * self.sigma * epsilon
