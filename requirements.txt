@@ -1,2 +1,2 @@
 numpy==1.16.4
-torch==1.1.0.post2
+torch==2.2.0
